@@ -23,9 +23,9 @@ func main() {
 }
 
 func new() {
-	resp, _ := http.Get(link)//что тут вообще происходит..?
-	bytes, _ := ioutil.ReadAll(resp.Body)//я еще не настолько хорошо знаю английский чтоб так хорошо понимать всю документацию((
-	resp.Body.Close()//Опять же, зачем закрывать? 
+	resp, _ := http.Get(link)
+	bytes, _ := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
 
 	re := regexp.MustCompile("(http)+://[a-z.]+")
 	resultlinks := re.FindAllString(string(bytes), link_num)

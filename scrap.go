@@ -1,41 +1,54 @@
 package main
 
 import (
-	"fmt"
 	"flag"
-	"net/http"
+	"fmt"
 	"io/ioutil"
-	"regexp"
+	"log"
+	"net/http"
+
+	"mvdan.cc/xurls"
 )
 
+// https://stackoverflow.com/a/20895629
+// https://godoc.org/?q=regexp
+// https://github.com/mvdan/xurls
+
 var (
-	link      string  = "http://google.com"
-	link_num int     = 100
-	field     string
+	link    = flag.String("l", "http://google.com", "The first link")
+	linkNum = flag.Int("n", 100, "Number of links")
 )
 
 func main() {
-	// fmt.Scanf("%s", &link) //так не выходит, не меняется флаг с количеством ссылок. Почему?
-	flag.StringVar(&link, "l", link, "ссылка")
-	flag.IntVar(&link_num, "n", link_num, "количество необходимых ссылок")
 	flag.Parse()
-	new()
-}
 
-func new() {
-	resp, _ := http.Get(link)
-	bytes, _ := ioutil.ReadAll(resp.Body)
-	resp.Body.Close()
+	candidates := []string{*link}
+	all := []string{}
 
-	re := regexp.MustCompile("(http)+://[a-z.]+")
-	resultlinks := re.FindAllString(string(bytes), link_num)
-	for _, list := range resultlinks {
-		if list == field {
-			return
-		} else {
-			field = list
-			fmt.Println(list)
+	for len(candidates) > 0 && len(all) < *linkNum {
+		url := candidates[0]
+		candidates = candidates[1:]
+		resp, err := http.Get(url)
+		if err != nil {
+			log.Fatalf("http.Get: %v", err)
+		}
+		defer resp.Body.Close()
+		bytes, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatalf("iotil.ReaAll: %v", err)
+		}
+		resultlinks := xurls.Strict().FindAllString(string(bytes), *linkNum)
+		for _, url := range resultlinks {
+			candidates = append(candidates, url)
+			all = append(all, url)
 		}
 	}
+
+	if len(all) > *linkNum {
+		all = all[:*linkNum]
+	}
+
+	for _, result := range all {
+		fmt.Println(result)
+	}
 }
-	
